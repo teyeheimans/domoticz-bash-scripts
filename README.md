@@ -74,13 +74,34 @@ sudo chmod u+x ./tado.sh
 ./tado.sh --verbose
 ```
 
+##### Example verbose output #####
+
+```
+Date: 03-04-2017 21:27
+Fetch result for url: https://my.tado.com/api/v2/me
+HOME ID: 1234
+Fetch result for url: https://my.tado.com/api/v2/homes/1234/zones/1/state
+Fetch result for url: https://my.tado.com/api/v2/homes/1234/weather
+Temperature: 20.35
+Humidity: 60.3
+Outside Temperature: 8.03
+Push values to domoticz...
+{ "status" : "OK", "title" : "Update Device" }
+{ "status" : "OK", "title" : "Update Device" }
+Done!
+```
+
 # phone-presence.sh #
 
 This script is used to detect if a phone is in the network. We use ARP because iPhone's won't respond on ping when the
 are in sleep mode.
 
+To make this script work you should assign a static ip address to your device based on your devices mac address.
+
 By default we will assume that your phone is "gone" after it has received 5 times an offline status. This is to prevent 
 hickups which will keep flapping your device status.
+
+In general the ON detection will be quite fast, but the off detectionn
 
 ##### Domoticz preperation #####
 
@@ -136,4 +157,24 @@ bash ./phone-presence.sh --verbose
 sudo chmod u+x ./phone-presence.sh
 # and then call it like this:
 ./phone-presence.sh --verbose
+```
+
+##### Example verbose output #####
+
+```
+=== Starting scan for device with idx 72 on ip 10.0.1.213 with Mac address 34:ee:fd:60:9a:11 ===
+Idx: 72, ip: 10.0.1.213, mac: 34:ee:fd:60:9a:11
+Status of request: OK
+Current device status: On
+Mac address: 34:ee:fd:60:9a:11
+State: ON, known state: On
+
+=== Starting scan for device with idx 71 on ip 10.0.1.212 with Mac address e0:ff:45:9e:2c:22 ===
+Idx: 71, ip: 10.0.1.212, mac: e0:ff:45:9e:2c:22
+Status of request: OK
+Current device status: On
+Mac address: e0:ff:45:9e:2c:22
+State: OFF, known sate: On, attempt 5/5
+UPDATE STATE TO OFF!
+{ "status" : "OK", "title" : "SwitchLight" }
 ```
