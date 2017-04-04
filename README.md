@@ -101,7 +101,9 @@ To make this script work you should assign a static ip address to your device ba
 By default we will assume that your phone is "gone" after it has received 5 times an offline status. This is to prevent 
 hickups which will keep flapping your device status.
 
-In general the ON detection will be quite fast, but the off detectionn
+In general the ON detection will be quite fast, but the OFF detection will take some longer. This is because there are
+a lot of "false-positives" where it seems that the device is offline, but it is not. This is also why the cooldown 
+period is build in. 
 
 ##### Domoticz preperation #####
 
