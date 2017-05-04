@@ -100,7 +100,7 @@ function check_device {
 	verbose "Idx: ${idx}, ip: ${ip}, mac: ${mac}";
 
 	# Fetch known state
-	json=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=devices&filter=all&used=true&order=Name")
+	json=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} --connect-timeout 10 -k -s "${DOMOTICZ_URL}/json.htm?type=devices&filter=all&used=true&order=Name")
 
 	status=`echo $json | ${JQ} -r '.status'`
 	verbose "Status of request: ${status}";
@@ -137,7 +137,7 @@ function check_device {
 		if [ "${known_state}" != "On" ];
 		then
 			verbose "UPDATE STATE TO ON!";
-			response=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=switchlight&idx=${idx}&switchcmd=On&level=0&passcode=${DOMOTICZ_PIN}")
+			response=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} --connect-timeout 10 -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=switchlight&idx=${idx}&switchcmd=On&level=0&passcode=${DOMOTICZ_PIN}")
 			verbose "$response"
 		fi
 	else
@@ -155,7 +155,7 @@ function check_device {
 				verbose "We are still in cooldown period. Do nothing...";
 			else 
 				verbose "UPDATE STATE TO OFF!";
-				response=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=switchlight&idx=${idx}&switchcmd=Off&level=0&passcode=${DOMOTICZ_PIN}")
+				response=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} --connect-timeout 10 -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=switchlight&idx=${idx}&switchcmd=Off&level=0&passcode=${DOMOTICZ_PIN}")
 				verbose "$response"
 			fi			
 		else

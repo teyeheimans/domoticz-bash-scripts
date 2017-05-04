@@ -86,7 +86,7 @@ function fetchResponse {
     URL=$1
 
     verbose "Fetch result for url: ${URL}";
-    JSON=$(curl -s "${URL}" -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
+    JSON=$(curl -s "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
 
     if [[ $JSON == *"Access token expired"* ]];
     then
