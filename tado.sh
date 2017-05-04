@@ -156,7 +156,7 @@ verbose "Humidity: ${HUMIDITY}"
 verbose "Outside Temperature: ${OUTSIDE_TEMP}";
 verbose "Push values to domoticz...";
 
-OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS}â--k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_OUTSIDE_TEMP_IDX}&nvalue=0&svalue=${OUTSIDE_TEMP}&passcode=${DOMOTICZ_PIN}");
+OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_OUTSIDE_TEMP_IDX}&nvalue=0&svalue=${OUTSIDE_TEMP}&passcode=${DOMOTICZ_PIN}");
 verbose "$OUTPUT";
 OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_INSIDE_TEMP_HUM_IDX}&nvalue=0&svalue=${TEMP};${HUMIDITY};0&passcode=${DOMOTICZ_PIN}");
 verbose "$OUTPUT";
