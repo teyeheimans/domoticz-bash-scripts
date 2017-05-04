@@ -125,6 +125,12 @@ HOMEID=$(echo $JSON | ${JQ} -r '.homes[0].id' )
 
 verbose "HOME ID: ${HOMEID}" ;
 
+if [ "${HOMEID}" = "null" ] || [ "${HOMEID}" = "" ];
+then
+  (>&2 echo "Error, we failed to fetch HOME id")
+  exit 1;
+fi
+
 #
 # Now fetch the inside temperature and humidity. Note: we assume that device 1 is the thermostat.
 #
@@ -148,4 +154,5 @@ verbose "$OUTPUT";
 OUTPUT=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_INSIDE_TEMP_HUM_IDX}&nvalue=0&svalue=${TEMP};${HUMIDITY};0&passcode=${DOMOTICZ_PIN}");
 verbose "$OUTPUT";
 
-verbose "Done!";
+verbose "Done!\n";
+exit 0;
