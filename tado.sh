@@ -94,7 +94,7 @@ function fetchResponse {
         fetchToken;
     fi
 
-    JSON=$(curl -s "${URL}" -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");    
+    JSON=$(curl -s --connect-timeout 10 "${URL}" -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
 }
 
 #
@@ -102,7 +102,7 @@ function fetchResponse {
 #
 function fetchToken {
     verbose "Retrieving new tado token... ";
-    /opt/local/bin/curl -s "https://my.tado.com/oauth/token" -d client_id=public-api-preview -d client_secret=4HJGRffVR8xb3XdEUQpjgZ1VplJi6Xgw -d grant_type=password -d scope=home.user -d username=${TADO_USER} -d password=${TADO_PASS} | ${JQ} -r '.access_token' > ${TADO_TOKENFILE};
+    /opt/local/bin/curl --connect-timeout 10 -s "https://my.tado.com/oauth/token" -d client_id=public-api-preview -d client_secret=4HJGRffVR8xb3XdEUQpjgZ1VplJi6Xgw -d grant_type=password -d scope=home.user -d username=${TADO_USER} -d password=${TADO_PASS} | ${JQ} -r '.access_token' > ${TADO_TOKENFILE};
 }
 
 #
@@ -115,6 +115,13 @@ if [ ! -f ${TADO_TOKENFILE} ];
 then
     verbose "Tado token file is missing, fetch new one...";
     fetchToken;
+fi
+
+TOKEN=`cat ${TADO_TOKENFILE}`
+if [ "${TOKEN}" = "" ];
+then
+	verbose "Token is empty, fetching new one...";
+	fetchToken;
 fi
 
 #
@@ -148,10 +155,15 @@ verbose "Temperature: ${TEMP}";
 verbose "Humidity: ${HUMIDITY}"
 verbose "Outside Temperature: ${OUTSIDE_TEMP}";
 verbose "Push values to domoticz...";
+URL="${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_OUTSIDE_TEMP_IDX}&nvalue=0&svalue=${OUTSIDE_TEMP}&passcode=${DOMOTICZ_PIN}";
 
-OUTPUT=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_OUTSIDE_TEMP_IDX}&nvalue=0&svalue=${OUTSIDE_TEMP}&passcode=${DOMOTICZ_PIN}");
+verbose "Requesting URL: ${URL}";
+OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
 verbose "$OUTPUT";
-OUTPUT=$(curl -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_INSIDE_TEMP_HUM_IDX}&nvalue=0&svalue=${TEMP};${HUMIDITY};0&passcode=${DOMOTICZ_PIN}");
+
+URL="${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_INSIDE_TEMP_HUM_IDX}&nvalue=0&svalue=${TEMP};${HUMIDITY};0&passcode=${DOMOTICZ_PIN}";
+verbose "Requesting URL: ${URL}";
+OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
 verbose "$OUTPUT";
 
 verbose "Done!\n";

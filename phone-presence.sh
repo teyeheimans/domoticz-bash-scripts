@@ -110,6 +110,7 @@ function check_device {
 		known_state=$(echo $json | ${JQ} -r ".result[] | select(.idx == \"${idx}\") | .Status")
 		verbose "Current device status: ${known_state}"
 	else
+		echo >&2 "${DOMOTICZ_URL}/json.htm?type=devices&filter=all&used=true&order=Name";
 		echo >&2 "Error, failed to fetch JSON response from domoticz";
 		exit 1;
 	fi
