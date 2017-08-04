@@ -102,7 +102,7 @@ function fetchResponse {
 #
 function fetchToken {
     verbose "Retrieving new tado token... ";
-    /opt/local/bin/curl --connect-timeout 10 -s "https://my.tado.com/oauth/token" -d client_id=public-api-preview -d client_secret=4HJGRffVR8xb3XdEUQpjgZ1VplJi6Xgw -d grant_type=password -d scope=home.user -d username=${TADO_USER} -d password=${TADO_PASS} | ${JQ} -r '.access_token' > ${TADO_TOKENFILE};
+    curl --connect-timeout 10 -s "https://my.tado.com/oauth/token" -d client_id=public-api-preview -d client_secret=4HJGRffVR8xb3XdEUQpjgZ1VplJi6Xgw -d grant_type=password -d scope=home.user -d username=${TADO_USER} -d password=${TADO_PASS} | ${JQ} -r '.access_token' > ${TADO_TOKENFILE};
 }
 
 #
