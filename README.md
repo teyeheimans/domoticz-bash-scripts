@@ -10,6 +10,8 @@ Both scripts depend on the [`jq`](https://stedolan.github.io/jq/) binary. jq is 
 Both scripts check if there is already another process running the script. It's not possible to run multple instances 
 of the same script simultaneously.
 
+The phone-presence script also requires hping3. 
+
 # tado.sh #
 
 This script collects the inside temperature, humidity and the outside temperature from a Tado Thermostat. It pushes 

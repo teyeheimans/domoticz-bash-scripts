@@ -12,6 +12,7 @@ DOMOTICZ_URL="https://domoticz.url:8443";
 COOLDOWN_COUNTER=5;
 
 type hping3 >/dev/null 2>&1 || { echo >&2 "I require hping3 but it's not installed. Aborting."; exit 1; }
+type jq >/dev/null 2>&1 || { echo >&2 "I require JQ but it's not installed. Aborting."; exit 1; }
 
 #
 # Here is a list of devices we want to check.
@@ -44,8 +45,9 @@ then
     source "${MYPATH}/phone-presence.conf"
 fi
 
-type jq >/dev/null 2>&1 || { echo >&2 "I require JQ but it's not installed. Aborting."; exit 1; }
+
 JQ=`which jq`
+HPING=`which hping3`
 
 
 # check if there is a lockfile
@@ -93,7 +95,7 @@ function check_device {
 	mac=$3
 
 	# Ping device to fetch ARP record
-	hping3 -2 -c 10 -p 5353 -i u1 ${ip} -q >/dev/null 2>&1;
+	$HPING -2 -c 10 -p 5353 -i u1 ${ip} -q >/dev/null 2>&1;
 
 	# Fetch all current devices
 	declare -a DEVICES
