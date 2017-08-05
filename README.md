@@ -107,6 +107,8 @@ In general the ON detection will be quite fast, but the OFF detection will take 
 a lot of "false-positives" where it seems that the device is offline, but it is not. This is also why the cooldown 
 period is build in. 
 
+**NOTE:** This script should be run as root
+
 ##### Domoticz preperation #####
 
 To make this script work you should have added a dummy device (switch) to your domoticz. This represents the on/off 
