@@ -95,6 +95,8 @@ function check_device {
 	mac=$3
 
 	# Ping device to fetch ARP record
+	verbose "Executing hping command:"
+	verbose "$HPING -2 -c 10 -p 5353 -i u1 ${ip} -q"
 	$HPING -2 -c 10 -p 5353 -i u1 ${ip} -q >/dev/null 2>&1;
 
 	# Fetch all current devices
