@@ -20,13 +20,36 @@ DOMOTICZ_OUTSIDE_TEMP_IDX=95
 MYPATH=$(dirname $0);
 VERBOSE=0;
 
-if [[ "$#" -ge 1 ]] ;
-then
-    if [[ $1 == "verbose" ]] || [[ $1 == "--verbose" ]] || [[ $1 == "-v" ]];
-    then
-        VERBOSE=1;
-    fi;
-fi;
+SETTEMP="0";
+SETMINS=120;
+
+
+#
+# Awesome parameter parsing, see http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+#
+for i in "$@"
+do
+case ${i} in
+	--temp=* )
+		SETTEMP="${i#*=}"
+		shift ;
+		;;
+
+	--mins=* )
+	    SETMINS="${i#*=}"
+	    shift ;
+	    ;;
+
+	-v | --verbose | verbose)
+		VERBOSE=1
+		shift ;
+		;;
+
+	*)
+	    (>&2 echo "Error, unknown parameter \"${i}\" given!");
+		;;
+	esac
+done
 
 #
 # Include tado variables, if exists
@@ -84,17 +107,43 @@ function verbose {
 #
 function fetchResponse {
     URL=$1
+    PUTDATA="";
+    ATTEMPT=1
 
-    verbose "Fetch result for url: ${URL}";
-    JSON=$(curl -s "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
-
-    if [[ $JSON == *"Access token expired"* ]];
+    if [[ ! -z "$2" ]];
     then
-        verbose "Access token is expired, fetch new one...";
-        fetchToken;
+        PUTDATA="$2";
     fi
 
-    JSON=$(curl -s --connect-timeout 10 "${URL}" -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
+    if [[ ! -z "$3" ]];
+    then
+        ATTEMPT="$3"
+    fi
+
+    if [[ "${PUTDATA}" != "" ]];
+    then
+        verbose "Fetch result for url: ${URL}";
+        verbose "Putting data: ${PUTDATA}";
+        JSON=$(curl -s -X PUT "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`" -H "Content-Type:application/json;charset=UTF-8" --data-binary "${PUTDATA}");
+    else
+        verbose "Fetch result for url: ${URL}";
+        JSON=$(curl -s "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
+    fi
+
+    # Token failure? Then retry
+    if [[ $JSON == *"Access token expired"* ]];
+    then
+        verbose "Access token is expired, fetch new one... (Attempt ${ATTEMPT})";
+
+        # If we did not retried yet..
+        if [[ ${ATTEMPT} -le 2 ]];
+        then
+            ATTEMPT=$((ATTEMPT+1));
+            fetchToken;
+
+            fetchResponse "${URL}" "${PUTDATA}" "${ATTEMPT}";
+        fi
+    fi
 }
 
 #
@@ -136,6 +185,30 @@ if [ "${HOMEID}" = "null" ] || [ "${HOMEID}" = "" ];
 then
   (>&2 echo "Error, we failed to fetch HOME id")
   exit 1;
+fi
+
+#
+# Set the temperature if wanted
+#
+if [[ ${SETTEMP} != "0" ]];
+then
+    SETSEC=$((SETMINS*60))
+    verbose "Set current temperature for ${SETMINS} minutes ( = ${SETSEC} seconds)"
+    fetchResponse "https://my.tado.com/api/v2/homes/${HOMEID}/zones/1/overlay" "{\"setting\":{\"type\":\"HEATING\",\"power\":\"ON\",\"temperature\":{\"celsius\":${SETTEMP}}},\"termination\":{\"type\":\"TIMER\",\"durationInSeconds\":${SETSEC}}}"
+    verbose ${JSON};
+
+    TADOTEMP=$(echo $JSON | ${JQ} '.setting.temperature.celsius');
+
+    if [[ ${TADOTEMP} -eq ${SETTEMP} ]];
+    then
+        verbose "Temperature SUCCESSFUL set to ${SETTEMP} C";
+    else
+        verbose "ERROR, something went wrong while setting the temperature. Raw response: ${JSON}";
+    fi
+
+    # Stop the script
+    verbose "Done!\n";
+    exit 0;
 fi
 
 #
