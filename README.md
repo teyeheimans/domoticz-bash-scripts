@@ -14,8 +14,14 @@ The phone-presence script also requires hping3.
 
 # tado.sh #
 
-This script collects the inside temperature, humidity and the outside temperature from a Tado Thermostat. It pushes 
-these values to domoticz.
+This script connects the TADO thermostat with domotics.
+
+The default behaviour of this script is to collect data from the thermostat 
+(inside temperature, humidity and the outside temperature). It will store the result in domotics.
+
+You can also push a certain temperature to the thermostat (in Celsius) for a given amount of minutes. I use this
+to disable the thermostat when we go to bed.
+
  
 ##### Domoticz preperation #####
 
@@ -92,6 +98,16 @@ Push values to domoticz...
 { "status" : "OK", "title" : "Update Device" }
 Done!
 ```
+
+##### Set the TADO temperature from domoticz #####
+
+I use this from an LUA script. When I disable the lights in the living room and in the hallway, this script 
+will automatically set the temperature to 16 degrees Celsius for two hours.
+
+```
+-- disable TADO heating
+os.execute('/home/admin/domoticz-bash-scripts/tado.sh --mins=120 --temp=16 &')
+``` 
 
 # phone-presence.sh #
 
