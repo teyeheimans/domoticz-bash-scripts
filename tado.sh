@@ -175,6 +175,9 @@ then
 	fetchToken;
 fi
 
+TOKEN=`cat ${TADO_TOKENFILE}`
+verbose "Using Token: ${TOKEN}";
+
 #
 # First, fetch the home id.
 #
