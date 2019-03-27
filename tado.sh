@@ -66,27 +66,27 @@ JQ=`which jq`
 #
 # Check if there is a lockfile. This prevents double execution of the script
 #
-if [ -f $LOCKFILE ];
+if [[ -f ${LOCKFILE} ]];
 then
     # Yes, there is a lockfile.
     # Check if it is more than 60 minutes old
     if test `find "$LOCKFILE" -mmin +60`
     then
         # Lockfile was too old, ignore it and remove it
-        rm $LOCKFILE
+        rm ${LOCKFILE}
     else
-        PID=`cat $LOCKFILE`
-        if ps -p $PID > /dev/null 2>/dev/null
+        PID=`cat ${LOCKFILE}`
+        if ps -p ${PID} > /dev/null 2>/dev/null
         then
             # Lockfile was new enough, and process still exists. Do NOT run this cron!
-            if [[ $VERBOSE -eq 1 ]]
+            if [[ ${VERBOSE} -eq 1 ]]
             then
                 echo >&2 "Job was already running"
             fi
             exit
         else
             # Lockfile was new enough, however process does not exist anymore. Remove lockfile and continue.
-            rm $LOCKFILE
+            rm ${LOCKFILE}
         fi
     fi
 fi
@@ -94,8 +94,9 @@ fi
 #
 # Display verbose output if wanted
 #
-function verbose {
-    if [[ $VERBOSE -eq 1 ]];
+function verbose()
+{
+    if [[ ${VERBOSE} -eq 1 ]];
     then
         echo $1;
     fi
@@ -105,7 +106,8 @@ function verbose {
 # This function is responsible for fetching results from the TADO API.
 # The response is placed in a variable called $JSON.
 #
-function fetchResponse {
+function fetchResponse()
+{
     URL=$1
     PUTDATA="";
     ATTEMPT=1
@@ -131,7 +133,7 @@ function fetchResponse {
     fi
 
     # Token failure? Then retry
-    if [[ $JSON == *"Access token expired"* ]];
+    if [[ ${JSON} == *"Access token expired"* ]];
     then
         verbose "Access token is expired, fetch new one... (Attempt ${ATTEMPT})";
 
@@ -160,14 +162,14 @@ function fetchToken {
 DATE=$(date +"%d-%m-%Y %k:%M");
 verbose "Date: ${DATE}"
 
-if [ ! -f ${TADO_TOKENFILE} ];
+if [[ ! -f ${TADO_TOKENFILE} ]];
 then
     verbose "Tado token file is missing, fetch new one...";
     fetchToken;
 fi
 
 TOKEN=`cat ${TADO_TOKENFILE}`
-if [ "${TOKEN}" = "" ];
+if [[ "${TOKEN}" = "" ]] || [[ "${TOKEN}" = "null" ]];
 then
 	verbose "Token is empty, fetching new one...";
 	fetchToken;
@@ -177,11 +179,11 @@ fi
 # First, fetch the home id.
 #
 fetchResponse "https://my.tado.com/api/v2/me"
-HOMEID=$(echo $JSON | ${JQ} -r '.homes[0].id' )
+HOMEID=$(echo ${JSON} | ${JQ} -r '.homes[0].id' )
 
 verbose "HOME ID: ${HOMEID}" ;
 
-if [ "${HOMEID}" = "null" ] || [ "${HOMEID}" = "" ];
+if [[ "${HOMEID}" = "null" ]] || [[ "${HOMEID}" = "" ]];
 then
   (>&2 echo "Error, we failed to fetch HOME id")
   exit 1;
@@ -197,7 +199,7 @@ then
     fetchResponse "https://my.tado.com/api/v2/homes/${HOMEID}/zones/1/overlay" "{\"setting\":{\"type\":\"HEATING\",\"power\":\"ON\",\"temperature\":{\"celsius\":${SETTEMP}}},\"termination\":{\"type\":\"TIMER\",\"durationInSeconds\":${SETSEC}}}"
     verbose ${JSON};
 
-    TADOTEMP=$(echo $JSON | ${JQ} '.setting.temperature.celsius');
+    TADOTEMP=$(echo ${JSON} | ${JQ} '.setting.temperature.celsius');
 
     if [[ ${TADOTEMP} -eq ${SETTEMP} ]];
     then
@@ -215,14 +217,14 @@ fi
 # Now fetch the inside temperature and humidity. Note: we assume that device 1 is the thermostat.
 #
 fetchResponse "https://my.tado.com/api/v2/homes/${HOMEID}/zones/1/state"
-TEMP=$(echo $JSON | ${JQ} '.sensorDataPoints.insideTemperature.celsius');
-HUMIDITY=$(echo $JSON | ${JQ} '.sensorDataPoints.humidity.percentage');
+TEMP=$(echo ${JSON} | ${JQ} '.sensorDataPoints.insideTemperature.celsius');
+HUMIDITY=$(echo ${JSON} | ${JQ} '.sensorDataPoints.humidity.percentage');
 
 #
 # Now fetch the outside temperature
 #
 fetchResponse "https://my.tado.com/api/v2/homes/${HOMEID}/weather"
-OUTSIDE_TEMP=$(echo $JSON | ${JQ} '.outsideTemperature.celsius');
+OUTSIDE_TEMP=$(echo ${JSON} | ${JQ} '.outsideTemperature.celsius');
 
 verbose "Temperature: ${TEMP}";
 verbose "Humidity: ${HUMIDITY}"
