@@ -61,7 +61,7 @@ fi
 
 type jq >/dev/null 2>&1 || { echo >&2 "I require JQ but it's not installed. Aborting."; exit 1; }
 
-JQ=`which jq`
+JQ=$(which jq);
 
 #
 # Check if there is a lockfile. This prevents double execution of the script
@@ -70,12 +70,12 @@ if [[ -f ${LOCKFILE} ]];
 then
     # Yes, there is a lockfile.
     # Check if it is more than 60 minutes old
-    if test `find "$LOCKFILE" -mmin +60`
+    if test $(find "$LOCKFILE" -mmin +60)
     then
         # Lockfile was too old, ignore it and remove it
         rm ${LOCKFILE}
     else
-        PID=`cat ${LOCKFILE}`
+        PID=$(cat ${LOCKFILE});
         if ps -p ${PID} > /dev/null 2>/dev/null
         then
             # Lockfile was new enough, and process still exists. Do NOT run this cron!
@@ -126,10 +126,10 @@ function fetchResponse()
     then
         verbose "Fetch result for url: ${URL}";
         verbose "Putting data: ${PUTDATA}";
-        JSON=$(curl -s -X PUT "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`" -H "Content-Type:application/json;charset=UTF-8" --data-binary "${PUTDATA}");
+        JSON=$(curl -s -X PUT "${URL}" --connect-timeout 10 -H "Authorization: Bearer ${TOKEN}" -H "Content-Type:application/json;charset=UTF-8" --data-binary "${PUTDATA}");
     else
         verbose "Fetch result for url: ${URL}";
-        JSON=$(curl -s "${URL}" --connect-timeout 10 -H "Authorization: Bearer `cat ${TADO_TOKENFILE}`");
+        JSON=$(curl -s "${URL}" --connect-timeout 10 -H "Authorization: Bearer ${TOKEN}");
     fi
 
     # Token failure? Then retry
@@ -151,9 +151,40 @@ function fetchResponse()
 #
 # Retrieve a new TADO token and put it in the $TADO_TOKENFILE file.
 #
-function fetchToken {
+function fetchToken()
+{
+    verbose "Retrieve tado settings";
+    SETTINGS=$(curl --connect-timeout 10 -s "https://my.tado.com/webapp/env.js");
+
+    CLIENT_ID=$(echo "${SETTINGS}" | grep "clientId" | sed -e "s/[',]//g" | awk -F': ' '{print $2}' );
+    CLIENT_SECRET=$(echo "${SETTINGS}" | grep "clientSecret" | sed -e "s/[',]//g" | awk -F': ' '{print $2}' );
+
+    verbose "Retrieved client id: ${CLIENT_ID}";
+    verbose "Retrieved client secret: ${CLIENT_SECRET}";
+
     verbose "Retrieving new tado token... ";
-    curl --connect-timeout 10 -s "https://my.tado.com/oauth/token" -d client_id=public-api-preview -d client_secret=4HJGRffVR8xb3XdEUQpjgZ1VplJi6Xgw -d grant_type=password -d scope=home.user -d username=${TADO_USER} -d password=${TADO_PASS} | ${JQ} -r '.access_token' > ${TADO_TOKENFILE};
+    TOKEN=$(curl \
+        --connect-timeout 10 \
+        -s "https://auth.tado.com/oauth/token" \
+        -d client_id="${CLIENT_ID}" \
+        -d client_secret="${CLIENT_SECRET}" \
+        -d grant_type=password \
+        -d scope=home.user \
+        -d username="${TADO_USER}" \
+        -d password="${TADO_PASS}" | ${JQ} -r '.access_token' );
+
+    verbose "Retrieved token: ${TOKEN}";
+
+    # Check if token is wrong
+    if [[ "${TOKEN}" = "" ]] || [[ "${TOKEN}" = "null" ]];
+    then
+	    (>&2 echo "Error, token is still incorrect!")
+    exit 1;
+    fi
+
+    # store in file
+    verbose "Storing token in file: ${TADO_TOKENFILE}";
+    echo "${TOKEN}"> ${TADO_TOKENFILE};
 }
 
 #
@@ -168,15 +199,13 @@ then
     fetchToken;
 fi
 
-TOKEN=`cat ${TADO_TOKENFILE}`
+verbose "Fetching token from file: ${TADO_TOKENFILE}";
+TOKEN=$( cat "${TADO_TOKENFILE}" );
 if [[ "${TOKEN}" = "" ]] || [[ "${TOKEN}" = "null" ]];
 then
 	verbose "Token is empty, fetching new one...";
 	fetchToken;
 fi
-
-TOKEN=`cat ${TADO_TOKENFILE}`
-verbose "Using Token: ${TOKEN}";
 
 #
 # First, fetch the home id.
@@ -244,5 +273,5 @@ verbose "Requesting URL: ${URL}";
 OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
 verbose "$OUTPUT";
 
-verbose "Done!\n";
+verbose "Done!";
 exit 0;
