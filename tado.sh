@@ -133,7 +133,7 @@ function fetchResponse()
     fi
 
     # Token failure? Then retry
-    if [[ ${JSON} == *"Access token expired"* ]];
+    if [[ ${JSON} == *"expired"* ]];
     then
         verbose "Access token is expired, fetch new one... (Attempt ${ATTEMPT})";
 
@@ -274,12 +274,21 @@ verbose "Push values to domoticz...";
 URL="${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_OUTSIDE_TEMP_IDX}&nvalue=0&svalue=${OUTSIDE_TEMP}&passcode=${DOMOTICZ_PIN}";
 
 verbose "Requesting URL: ${URL}";
-OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
+if [[ -z "${DOMOTICZ_USER}" ]]; then
+  OUTPUT=$(curl --connect-timeout 10 -k -s "${URL}");
+else
+  OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
+fi
 verbose "$OUTPUT";
 
 URL="${DOMOTICZ_URL}/json.htm?type=command&param=udevice&idx=${DOMOTICZ_INSIDE_TEMP_HUM_IDX}&nvalue=0&svalue=${TEMP};${HUMIDITY};0&passcode=${DOMOTICZ_PIN}";
 verbose "Requesting URL: ${URL}";
-OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
+
+if [[ -z "${DOMOTICZ_USER}" ]]; then
+  OUTPUT=$(curl --connect-timeout 10 -k -s "${URL}");
+else
+  OUTPUT=$(curl --connect-timeout 10 -u ${DOMOTICZ_USER}:${DOMOTICZ_PASS} -k -s "${URL}");
+fi
 verbose "$OUTPUT";
 
 verbose "Done!";
