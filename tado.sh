@@ -154,7 +154,16 @@ function fetchResponse()
 function fetchToken()
 {
     verbose "Retrieve tado settings";
-    SETTINGS=$(curl --connect-timeout 10 -s "https://my.tado.com/webapp/env.js");
+    SETTINGS=$( \
+      curl 'https://app.tado.com/env.js' \
+      --connect-timeout 10 -s \
+      -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0' \
+      -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' \
+      -H 'Accept-Language: nl,en-US;q=0.7,en;q=0.3' \
+      -H 'Alt-Used: app.tado.com' \
+      -H 'Connection: keep-alive');
+
+    verbose "${SETTINGS}"
 
     CLIENT_ID=$(echo "${SETTINGS}" | grep "clientId" | sed -e "s/[',]//g" | awk -F': ' '{print $2}' );
     CLIENT_SECRET=$(echo "${SETTINGS}" | grep "clientSecret" | sed -e "s/[',]//g" | awk -F': ' '{print $2}' );
